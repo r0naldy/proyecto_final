@@ -2,7 +2,6 @@
 provider "aws" {
   region = var.aws_region
 }
-# Esto es un cambio para re-trigger el workflow
 
 # --- S3 Bucket para datos RAW y procesados ---
 resource "aws_s3_bucket" "x_bucket" {
@@ -99,7 +98,6 @@ resource "aws_lambda_function" "etl_lambda" {
   s3_bucket = aws_s3_bucket.x_bucket.id
   s3_key    = "lambda_deploy/lambda_function.zip" # Este path será usado por CI/CD
 
-  source_code_hash = filebase64sha256("../lambda_code/lambda_function.zip") # Placeholder, actualizado por CI/CD
 
   environment {
     variables = {
@@ -125,7 +123,8 @@ resource "aws_lambda_permission" "allow_s3_to_call_lambda" {
 resource "aws_s3_bucket_notification" "s3_notification" {
   bucket = aws_s3_bucket.x_bucket.id
 
-  lambda_queue {
+  # CAMBIO: Usar 'lambda_function' en lugar de 'lambda_queue'
+  lambda_function {
     lambda_function_arn = aws_lambda_function.etl_lambda.arn
     events              = ["s3:ObjectCreated:*"]
     filter_prefix       = "raw/"
@@ -186,6 +185,12 @@ resource "aws_iam_instance_profile" "ec2_flask_profile" {
   role = aws_iam_role.ec2_flask_role.name
 }
 
+# --- Nuevo recurso: Par de Claves EC2 ---
+resource "aws_key_pair" "flask_app_key" {
+  key_name   = "flask-app-key-managed-by-terraform" # Un nombre para tu key pair en AWS
+  public_key = var.ssh_public_key
+}
+
 # --- Security Group para la instancia EC2 ---
 resource "aws_security_group" "flask_sg" {
   name        = "flask-app-security-group"
@@ -203,7 +208,7 @@ resource "aws_security_group" "flask_sg" {
   ingress {
     from_port   = 80
     to_port     = 80
-    protocol    = "tcp"
+    protocol     = "tcp"
     cidr_blocks = ["0.0.0.0/0"] # Limitar esto en producción
     description = "Allow HTTP from anywhere"
   }
@@ -240,7 +245,7 @@ data "aws_ami" "amazon_linux_2" {
 resource "aws_instance" "flask_app_instance" {
   ami                         = data.aws_ami.amazon_linux_2.id
   instance_type               = var.ec2_instance_type
-  key_name                    = var.ec2_key_pair_name
+  key_name                    = aws_key_pair.flask_app_key.key_name # CAMBIO: Referencia al nombre de la clave creada por Terraform
   associate_public_ip_address = true
   vpc_security_group_ids      = [aws_security_group.flask_sg.id]
   iam_instance_profile        = aws_iam_instance_profile.ec2_flask_profile.name
