@@ -1,0 +1,58 @@
+# .github/workflows/deploy_lambda.yml
+name: Deploy Lambda Function
+
+on:
+  push:
+    branches:
+      - main # O la rama que uses para tu código Lambda
+    paths:
+      - 'lambda_code/**'
+env:
+  AWS_REGION: us-east-1 
+  S3_BUCKET_NAME: x-bucket-inicial 
+  LAMBDA_FUNCTION_NAME: ETLDataProcessor
+ 
+jobs:
+  deploy:
+    name: 'Deploy Lambda'
+    runs-on: ubuntu-latest
+    environment: production
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.9' # Asegúrate de que coincide con el runtime de tu Lambda
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Install Lambda dependencies
+        run: |
+          pip install --target ./lambda_code/package -r ./lambda_code/requirements.txt
+          # Copia el código de la función al directorio de package
+          cp ./lambda_code/lambda_function.py ./lambda_code/package/
+          cd ./lambda_code/package
+          zip -r ../lambda_function.zip .
+          cd ../..
+
+      - name: Upload Lambda deployment package to S3
+        run: aws s3 cp ./lambda_code/lambda_function.zip s3://${{ env.S3_BUCKET_NAME }}/lambda_deploy/lambda_function.zip
+
+      - name: Update Lambda function code
+        run: |
+          aws lambda update-function-code \
+            --function-name ${{ env.LAMBDA_FUNCTION_NAME }} \
+            --s3-bucket ${{ env.S3_BUCKET_NAME }} \
+            --s3-key lambda_deploy/lambda_function.zip \
+            --publish
+        env:
+          AWS_MAX_ATTEMPTS: 10 
+          AWS_RETRY_MODE: standard
