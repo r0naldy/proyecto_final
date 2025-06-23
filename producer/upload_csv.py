@@ -18,5 +18,5 @@ try:
 except Exception as e:
     print(f"Error al subir el archivo CSV a S3: {e}")
     print("Asegúrate de que el bucket existe y tienes los permisos correctos.")
-    print("Verifica el archivo de credenciales de AWS (~/.aws/credentials) o las variables de entorno.")
+    print("Verifica el archivo de credenciales del AWS (~/.aws/credentials) o las variables de entorno.")
 

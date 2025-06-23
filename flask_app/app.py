@@ -7,7 +7,7 @@ import os
 app = Flask(__name__)
 
 # Configuración del cliente S3
-# Las credenciales se obtendrán automáticamente del rol de IAM de la instancia EC2
+# Las credenciales se obtendrán automáticamente del rol de IAM de la instancia EC2.e
 s3_client = boto3.client('s3')
 
 # Obtener el nombre del bucket de una variable de entorno o usar un valor por defecto

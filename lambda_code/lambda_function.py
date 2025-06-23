@@ -12,7 +12,7 @@ s3_client = boto3.client('s3')
 
 def lambda_handler(event, context):
     """
-    Función principal de la Lambda que se activa con un evento S3.
+    Función principal de la Lambda que se activa con un evento S3..
     Lee un archivo CSV del bucket 'raw/', limpia y transforma los datos,
     y guarda el resultado como JSON en el bucket 'processed/'.
     """

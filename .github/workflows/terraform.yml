@@ -4,7 +4,7 @@ name: Terraform Apply
 on:
   push:
     branches:
-      - main # O la rama que uses para tu código de infraestructura
+      - main # O la rama que uses para tu código de infraestructurad
     paths:
       - 'terraform/**' # Activa el workflow cuando hay cambios en la carpeta terraform
 

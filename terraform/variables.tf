@@ -23,6 +23,6 @@ variable "ec2_instance_type" {
 }
 
 variable "ssh_public_key" {
-  description = "La clave pública SSH para crear el par de claves EC2."
+  description = "La clave pública SSH para crear el par de claves EC2.."
   type        = string
 }

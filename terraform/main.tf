@@ -264,7 +264,7 @@ resource "aws_instance" "flask_app_instance" {
   }
 }
 
-# Datos para obtener el ID de la cuenta AWS
+# Datos para obtener el ID de la cuenta AWSre
 data "aws_caller_identity" "current" {}
 data "aws_vpc" "default" {
   default = true
