@@ -4,19 +4,19 @@ name: Terraform Apply
 on:
   push:
     branches:
-      - main 
+      - main # O la rama que uses para tu código de infraestructura
     paths:
-      - 'terraform/**' 
+      - 'terraform/**' # Activa el workflow cuando hay cambios en la carpeta terraform
 
 env:
-  AWS_REGION: us-east-1 
-  S3_BUCKET_NAME: x-bucket-inicial
+  AWS_REGION: us-east-1 # Asegúrate de que esta región coincide con tus tfvars
+  S3_BUCKET_NAME: x-bucket-inicial # Asegúrate de que esta variable coincide con tus tfvars
 
 jobs:
   terraform:
     name: 'Terraform Apply'
     runs-on: ubuntu-latest
-    environment: production
+    environment: production # Puedes usar un entorno de GitHub para gestionar secretos
 
     steps:
       - name: Checkout code
@@ -32,7 +32,15 @@ jobs:
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
         with:
-          terraform_version: 1.5.0
+          terraform_version: 1.5.0 # Usa una versión específica
+
+      # --- Pasos de depuración añadidos ---
+      - name: Debug: List Terraform directory contents
+        run: ls -l terraform/
+
+      - name: Debug: Display terraform.tfvars content (Sensitive: Public Key)
+        run: cat terraform/terraform.tfvars
+      # --- Fin de Pasos de depuración ---
 
       - name: Terraform Init
         id: init
