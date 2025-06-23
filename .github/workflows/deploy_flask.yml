@@ -1,9 +1,10 @@
+
 name: Deploy Flask App to EC2
 
 on:
   push:
     branches:
-      - main 
+      - main
     paths:
       - 'flask_app/**' 
 
@@ -36,16 +37,14 @@ jobs:
             --query "Reservations[0].Instances[0].PublicIpAddress" \
             --output text)
           echo "EC2_IP=$EC2_IP" >> $GITHUB_ENV
-        
 
       - name: Setup SSH
         uses: webfactory/ssh-agent@v0.8.0
         with:
-          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }} 
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }} # Clave privada SSH de tu key pair de EC2
 
       - name: Deploy to EC2
         run: |
-          # Asegúrate de que el nombre de usuario es correcto para tu AMI (ej. ec2-user para Amazon Linux)
           ssh -o StrictHostKeyChecking=no ec2-user@${{ env.EC2_IP }} << 'EOF'
             # Instalar o actualizar dependencias necesarias
             sudo yum update -y

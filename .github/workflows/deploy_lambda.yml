@@ -25,7 +25,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.9' # Asegúrate de que coincide con el runtime de tu Lambda
+          python-version: '3.9'
 
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
