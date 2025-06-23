@@ -2,6 +2,7 @@
 provider "aws" {
   region = var.aws_region
 }
+# Esto es un cambio para re-trigger el workflow
 
 # --- S3 Bucket para datos RAW y procesados ---
 resource "aws_s3_bucket" "x_bucket" {
