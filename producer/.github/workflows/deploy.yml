@@ -1,7 +1,7 @@
 name: Deploy S3 Infra with Terraform
 
 on:
-  push:
+  push:Add commentMore actions
     branches: [main]
     paths:
       - 'terraform/**'

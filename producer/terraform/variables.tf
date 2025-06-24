@@ -1,5 +1,4 @@
-variable "bucket_name" {
+variable "bucket_name" {Add commentMore actions
   description = "Nombre único para el bucket S3"
-  type        = string
-  default     = "x-bucket-cloud"
+    default     = "x-bucket-cloud"
 }
