@@ -2,17 +2,17 @@ name: Upload CSV to S3
 
 on:
   push:
-    branches: [main]
-    # Detecta cualquier cambio en el repo
+    branches:
+      - main
     paths:
-      - '**.csv'
+      - '**/*.csv'  # Detecta cualquier .csv en cualquier parte del repo
 
 jobs:
-  upload:
+  upload-csv:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout repo
+    - name: Checkout code
       uses: actions/checkout@v3
 
     - name: Configure AWS credentials
