@@ -1,11 +1,11 @@
-name: Deploy S3 Infra with Terraform
+name: Deploy Infraestructura con Terraform
 
 on:
-  workflow_dispatch:
   push:
     branches: [main]
     paths:
-      - 'producer/terraform/**'
+      - 'producer/terraform/main.tf'
+      - 'producer/terraform/variables.tf'
 
 jobs:
   deploy:
@@ -21,10 +21,8 @@ jobs:
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v2
 
-      - name: Terraform Init
+      - name: Terraform Init & Apply
         working-directory: producer/terraform
-        run: terraform init
-
-      - name: Terraform Apply
-        working-directory: producer/terraform
-        run: terraform apply -auto-approve
+        run: |
+          terraform init
+          terraform apply -auto-approve

@@ -1,9 +1,10 @@
-name: Upload CSV to S3
+name: Upload CSV + Update Lambda
 
 on:
   push:
     paths:
       - 'producer/terraform/sales_data_dirty_20_errores.csv'
+      - 'producer/terraform/lambda_function.py'
 
 jobs:
   upload:
@@ -19,8 +20,14 @@ jobs:
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v2
 
-      - name: Terraform Apply CSV Upload
+      - name: Package Lambda
+        working-directory: producer/terraform
+        run: zip lambda.zip lambda_function.py
+
+      - name: Terraform Apply (Lambda + CSV)
         working-directory: producer/terraform
         run: |
           terraform init
-          terraform apply -auto-approve -target=aws_s3_object.csv_upload
+          terraform apply -auto-approve \
+            -target=aws_lambda_function.csv_corrector \
+            -target=aws_s3_object.csv_upload
