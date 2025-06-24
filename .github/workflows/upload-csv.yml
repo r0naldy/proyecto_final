@@ -5,7 +5,7 @@ on:
     branches:
       - main
     paths:
-      - '***/*.csv'  # se activa con cualquier .csv
+      - '**/*.csv'  # se activa con cualquier .csv
 
 jobs:
   upload-csv:
