@@ -1,4 +1,4 @@
-resource "aws_s3_bucket" "x_bucket" {Add commentMore actions
+resource "aws_s3_bucket" "x_bucket" {
   bucket        = var.bucket_name
   force_destroy = true
 }
