@@ -24,7 +24,7 @@ jobs:
         working-directory: producer/terraform
         run: zip lambda.zip lambda_function.py
 
-      - name: Terraform Apply (Lambda + CSV)
+      - name: Terraform Apply
         working-directory: producer/terraform
         run: |
           terraform init
