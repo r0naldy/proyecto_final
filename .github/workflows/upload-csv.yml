@@ -3,8 +3,9 @@ name: Upload CSV to S3
 on:
   push:
     branches: [main]
+    # Detecta cualquier cambio en el repo
     paths:
-      - 'sales_data_dirty_20_errores.csv' 
+      - '**.csv'
 
 jobs:
   upload:
