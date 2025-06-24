@@ -1,10 +1,10 @@
-name: Deploy S3 Infra with Terraform prueba
+name: Deploy S3 Infra with Terraform
 
 on:
-  push:Add commentMore actions
+  push:
     branches: [main]
     paths:
-    - 'producer/terraform/**'
+      - 'producer/terraform/**'
 
 jobs:
   deploy:
