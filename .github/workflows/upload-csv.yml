@@ -4,7 +4,7 @@ on:
   push:
     branches: [main]
     paths:
-      - 'sales_data_dirty_20_errores.csv'
+      - 'sales_data_dirty_20_errores.csv' 
 
 jobs:
   upload:
@@ -23,4 +23,4 @@ jobs:
 
     - name: Upload CSV to S3
       run: |
-        aws s3 cp sales_data_dirty_20_errores.csv s3://x-bucket-ronald-unique-001/raw/sales_data_dirty_20_errores.csv
+        aws s3 cp sales_data_dirty_20_errores.csv s3://x-bucket-cloud/raw/sales_data_dirty_20_errores.csv
