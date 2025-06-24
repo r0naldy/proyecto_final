@@ -2,20 +2,21 @@ provider "aws" {
   region = "us-east-1"
 }
 
-resource "aws_s3_bucket" "x_bucket" {
-  bucket        = var.bucket_name
-  force_destroy = true
-}
+# ⚠️ Ya tienes el bucket creado, por eso comentamos esta sección
+# resource "aws_s3_bucket" "x_bucket" {
+#   bucket        = var.bucket_name
+#   force_destroy = true
+# }
 
 resource "aws_s3_object" "raw_folder" {
-  bucket = aws_s3_bucket.x_bucket.id
+  bucket = var.bucket_name  # antes: aws_s3_bucket.x_bucket.id
   key    = "raw/"
   source = "empty.txt"
   etag   = filemd5("empty.txt")
 }
 
 resource "aws_s3_object" "processed_folder" {
-  bucket = aws_s3_bucket.x_bucket.id
+  bucket = var.bucket_name  # antes: aws_s3_bucket.x_bucket.id
   key    = "processed/"
   source = "empty.txt"
   etag   = filemd5("empty.txt")
@@ -65,11 +66,11 @@ resource "aws_lambda_permission" "s3_invoke_permission" {
   action        = "lambda:InvokeFunction"
   function_name = aws_lambda_function.csv_corrector.function_name
   principal     = "s3.amazonaws.com"
-  source_arn    = aws_s3_bucket.x_bucket.arn
+  source_arn    = "arn:aws:s3:::${var.bucket_name}"  # antes: aws_s3_bucket.x_bucket.arn
 }
 
 resource "aws_s3_bucket_notification" "bucket_notification" {
-  bucket = aws_s3_bucket.x_bucket.id
+  bucket = var.bucket_name  # antes: aws_s3_bucket.x_bucket.id
 
   lambda_function {
     lambda_function_arn = aws_lambda_function.csv_corrector.arn
