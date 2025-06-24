@@ -4,7 +4,7 @@ on:
   push:Add commentMore actions
     branches: [main]
     paths:
-      - 'terraform/**'
+    - 'producer/terraform/**'
 
 jobs:
   deploy:
