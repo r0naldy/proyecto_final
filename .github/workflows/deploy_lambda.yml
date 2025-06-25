@@ -19,7 +19,7 @@ jobs:
       - name: Checkout código
         uses: actions/checkout@v3
 
-      - name: Descargar ZIP generado
+      - name: Descargar artefacto ZIP desde build
         uses: actions/download-artifact@v4
         with:
           name: lambda-package
