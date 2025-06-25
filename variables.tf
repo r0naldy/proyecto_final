@@ -7,5 +7,5 @@ variable "bucket_name" {
 }
 
 variable "ami" {
-  default = "ami-0c02fb55956c7d316" # Ubuntu 20.04 LTS para eu-central-1
+  default = "ami-081609eef2e3cc958"  # Ubuntu Server 20.04 LTS x86_64
 }

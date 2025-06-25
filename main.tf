@@ -8,7 +8,7 @@ resource "aws_s3_bucket" "x_bucket" {
 }
 
 resource "aws_iam_role" "lambda_exec" {
-  name = "lambda_exec_role_ronal_dev_2025"
+  name = "lambda_exec_role_ronal_dev_2025_2"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17",
