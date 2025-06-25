@@ -1,17 +1,19 @@
-name: Upload CSV + Update Lambda
+name: Upload CSV + Update Lambda Code
 
 on:
   push:
     paths:
-      - 'producer/terraform/sales_data_dirty_20_errores.csv'
-      - 'producer/terraform/lambda_function.py'
+      - 'lambda_build/lambda_function.py'
+      - 'lambda_build/lambda.zip'
 
 jobs:
-  upload:
+  update:
     runs-on: ubuntu-latest
+
     env:
       AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
       AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      AWS_DEFAULT_REGION: us-east-1
 
     steps:
       - name: Checkout
@@ -20,21 +22,21 @@ jobs:
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v2
 
-      - name: Package Lambda
-        working-directory: producer/terraform
-        run: zip lambda.zip lambda_function.py
+      - name: Copy ZIP al workspace de Terraform
+        run: cp lambda_build/lambda.zip producer/terraform/lambda.zip
 
       - name: Terraform Init
         working-directory: producer/terraform
         run: terraform init
 
-      - name: Import Lambda (si existe)
-        working-directory: producer/terraform
-        run: terraform import aws_lambda_function.csv_corrector csv_corrector_lambda || true
-
-      - name: Terraform Apply
+      - name: Importar Lambda si ya existe
         working-directory: producer/terraform
         run: |
-          terraform apply -auto-approve \
-            -target=aws_lambda_function.csv_corrector \
-            -target=aws_s3_object.csv_upload
+          LAMBDA_EXISTS=$(aws lambda get-function --function-name csv_corrector_lambda --region us-east-1 --query 'Configuration.FunctionName' --output text 2>/dev/null || echo "NONE")
+          if [ "$LAMBDA_EXISTS" != "NONE" ]; then
+            terraform import aws_lambda_function.csv_corrector csv_corrector_lambda || true
+          fi
+
+      - name: Terraform Apply (solo actualizar Lambda)
+        working-directory: producer/terraform
+        run: terraform apply -auto-approve -target=aws_lambda_function.csv_corrector
