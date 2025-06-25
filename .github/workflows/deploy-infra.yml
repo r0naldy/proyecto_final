@@ -10,9 +10,11 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+
     env:
       AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
       AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      AWS_DEFAULT_REGION: us-east-1
 
     steps:
       - name: Checkout repo
@@ -24,6 +26,14 @@ jobs:
       - name: Terraform Init
         working-directory: producer/terraform
         run: terraform init
+
+      - name: Importar Lambda si ya existe
+        working-directory: producer/terraform
+        run: |
+          LAMBDA_EXISTS=$(aws lambda get-function --function-name csv_corrector_lambda --region us-east-1 --query 'Configuration.FunctionName' --output text 2>/dev/null || echo "NONE")
+          if [ "$LAMBDA_EXISTS" != "NONE" ]; then
+            terraform import aws_lambda_function.csv_corrector csv_corrector_lambda || true
+          fi
 
       - name: Terraform Apply solo infraestructura
         working-directory: producer/terraform
