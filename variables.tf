@@ -3,7 +3,7 @@ variable "region" {
 }
 
 variable "bucket_name" {
-  default = "x-bucket"
+  default = "x-bucket-ronal-2025-dev"  # algo único
 }
 
 variable "ami" {
