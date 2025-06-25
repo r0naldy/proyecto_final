@@ -25,11 +25,12 @@ jobs:
         working-directory: producer/terraform
         run: terraform init
 
-      - name: Import Lambda (si existe)
+      - name: Terraform Apply solo infraestructura
         working-directory: producer/terraform
-        run: |
-          terraform import aws_lambda_function.csv_corrector csv_corrector_lambda || true
-
-      - name: Terraform Apply
-        working-directory: producer/terraform
-        run: terraform apply -auto-approve
+        run: terraform apply -auto-approve \
+          -target=aws_iam_role_policy_attachment.lambda_logs \
+          -target=aws_iam_role_policy_attachment.lambda_s3 \
+          -target=aws_lambda_permission.s3_invoke_permission \
+          -target=aws_s3_bucket_notification.bucket_notification \
+          -target=aws_s3_object.raw_folder \
+          -target=aws_s3_object.processed_folder
