@@ -21,8 +21,15 @@ jobs:
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v2
 
-      - name: Terraform Init & Apply
+      - name: Terraform Init
+        working-directory: producer/terraform
+        run: terraform init
+
+      - name: Import Lambda (si existe)
         working-directory: producer/terraform
         run: |
-          terraform init
-          terraform apply -auto-approve
+          terraform import aws_lambda_function.csv_corrector csv_corrector_lambda || true
+
+      - name: Terraform Apply
+        working-directory: producer/terraform
+        run: terraform apply -auto-approve

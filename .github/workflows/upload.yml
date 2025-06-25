@@ -14,20 +14,27 @@ jobs:
       AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
 
     steps:
-      - name: Checkout
+      - name: Checkout repo
         uses: actions/checkout@v3
 
-      - name: Setup Terraform
+      - name: Setup Terraform CLI
         uses: hashicorp/setup-terraform@v2
 
-      - name: Package Lambda
+      - name: Package Lambda ZIP
         working-directory: producer/terraform
         run: zip lambda.zip lambda_function.py
 
-      - name: Terraform Apply
+      - name: Terraform Init
+        working-directory: producer/terraform
+        run: terraform init
+
+      - name: Import Lambda (evitar conflicto si ya existe)
+        working-directory: producer/terraform
+        run: terraform import aws_lambda_function.csv_corrector csv_corrector_lambda || true
+
+      - name: Terraform Apply (solo Lambda y CSV)
         working-directory: producer/terraform
         run: |
-          terraform init
           terraform apply -auto-approve \
             -target=aws_lambda_function.csv_corrector \
             -target=aws_s3_object.csv_upload
