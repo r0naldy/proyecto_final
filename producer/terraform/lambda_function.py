@@ -130,4 +130,4 @@ def lambda_handler(event, context):
         'body': f'Se procesó {object_key} y se creó {output_key} con {len(cleaned_rows)} registros limpios.'
     }
 
-#nuevo
+#nuevo2
