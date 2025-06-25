@@ -18,4 +18,4 @@ def lambda_handler(event, context):
         new_key = f"cleaned/{key.split('/')[-1]}"
         s3.put_object(Bucket=bucket, Key=new_key, Body=json.dumps(data))
 
-    return {"status": "processed"}
+    return {"status": "processedo"}
