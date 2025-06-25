@@ -1,4 +1,4 @@
-name: Deploy Lambda Function
+name: Deploy Lambda
 
 on:
   workflow_run:
@@ -8,7 +8,6 @@ on:
 
 jobs:
   deploy:
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
 
     env:
@@ -20,11 +19,13 @@ jobs:
       - name: Checkout código
         uses: actions/checkout@v3
 
-      - name: Descargar artefacto ZIP
+      - name: Descargar ZIP generado
         uses: actions/download-artifact@v4
         with:
           name: lambda-package
-          path: producer/terraform/
+
+      - name: Mover ZIP al folder de Terraform
+        run: mv lambda.zip producer/terraform/lambda.zip
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v2
@@ -33,14 +34,6 @@ jobs:
         working-directory: producer/terraform
         run: terraform init
 
-      - name: Importar Lambda si ya existe
-        working-directory: producer/terraform
-        run: |
-          LAMBDA_EXISTS=$(aws lambda get-function --function-name csv_corrector_lambda --region us-east-1 --query 'Configuration.FunctionName' --output text 2>/dev/null || echo "NONE")
-          if [ "$LAMBDA_EXISTS" != "NONE" ]; then
-            terraform import aws_lambda_function.csv_corrector csv_corrector_lambda || true
-          fi
-
-      - name: Terraform Apply para Lambda ZIP
+      - name: Terraform Apply para actualizar Lambda
         working-directory: producer/terraform
         run: terraform apply -auto-approve -target=aws_lambda_function.csv_corrector
