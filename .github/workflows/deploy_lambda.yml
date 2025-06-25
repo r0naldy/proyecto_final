@@ -1,10 +1,11 @@
 name: Deploy Lambda
 
 on:
-  workflow_run:
-    workflows: ["Build Lambda Zip"]
-    types:
-      - completed
+  push:
+    branches: [main]
+    paths:
+      - 'producer/terraform/**'
+      - '.github/workflows/deploy_lambda.yml'
 
 jobs:
   deploy:
@@ -19,13 +20,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
-      - name: Descargar artefacto ZIP
+      - name: Descargar lambda.zip desde artifacts
         uses: actions/download-artifact@v4
         with:
           name: lambda-package
-
-      - name: Mover ZIP al folder de Terraform
-        run: mv lambda.zip producer/terraform/lambda.zip
+          path: producer/terraform
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v2
@@ -34,6 +33,14 @@ jobs:
         working-directory: producer/terraform
         run: terraform init
 
-      - name: Terraform Apply para Lambda
+      - name: Importar Lambda si ya existe
         working-directory: producer/terraform
-        run: terraform apply -auto-approve -target=aws_lambda_function.csv_corrector
+        run: |
+          LAMBDA_EXISTS=$(aws lambda get-function --function-name csv_corrector_lambda --region us-east-1 --query 'Configuration.FunctionName' --output text 2>/dev/null || echo "NONE")
+          if [ "$LAMBDA_EXISTS" != "NONE" ]; then
+            terraform import aws_lambda_function.csv_corrector csv_corrector_lambda || true
+          fi
+
+      - name: Terraform Apply
+        working-directory: producer/terraform
+        run: terraform apply -auto-approve
