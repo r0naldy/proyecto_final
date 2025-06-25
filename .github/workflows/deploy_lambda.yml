@@ -24,7 +24,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: lambda-package
-          path: producer/terraform
+          path: producer/terraform  # OJO: aquí se descargará lambda.zip
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v2
