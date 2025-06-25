@@ -14,7 +14,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
-      - name: Instalar dependencias en entorno compatible
+      - name: Instalar dependencias y empaquetar Lambda
         run: |
           mkdir -p python
           pip install pandas numpy -t python/
@@ -22,7 +22,7 @@ jobs:
           zip -r lambda.zip lambda_function.py python
 
       - name: Subir artefacto ZIP
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: lambda-package
           path: lambda.zip
