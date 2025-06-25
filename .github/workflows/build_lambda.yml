@@ -1,0 +1,28 @@
+name: Build Lambda Zip
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'lambda_build/**'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Instalar dependencias en entorno compatible
+        run: |
+          mkdir -p python
+          pip install pandas numpy -t python/
+          cp lambda_build/lambda_function.py .
+          zip -r lambda.zip lambda_function.py python
+
+      - name: Subir artefacto ZIP
+        uses: actions/upload-artifact@v3
+        with:
+          name: lambda-package
+          path: lambda.zip
