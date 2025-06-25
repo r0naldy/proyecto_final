@@ -67,3 +67,5 @@ resource "aws_s3_object" "processed_folder" {
   key    = "processed/"
   source = "${path.module}/empty.txt"
 }
+
+#da
