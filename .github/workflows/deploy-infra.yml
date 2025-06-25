@@ -30,10 +30,10 @@ jobs:
       - name: Importar Lambda si ya existe
         working-directory: producer/terraform
         run: |
-          LAMBDA_EXISTS=$(aws lambda get-function --function-name csv_corrector_lambda --region us-east-1 --query 'Configuration.FunctionName' --output text 2>/dev/null || echo "NONE")
-          if [ "$LAMBDA_EXISTS" != "NONE" ]; then
-            terraform import aws_lambda_function.csv_corrector csv_corrector_lambda || true
-          fi
+            LAMBDA_EXISTS=$(aws lambda get-function --function-name csv_corrector_lambda --region us-east-1 --query 'Configuration.FunctionName' --output text 2>/dev/null || echo "NONE")
+            if [ "$LAMBDA_EXISTS" != "NONE" ]; then
+            terraform import aws_lambda_function.csv_corrector csv_corrector_lambda
+            fi
 
       - name: Terraform Apply solo infraestructura
         working-directory: producer/terraform

@@ -1,104 +1,133 @@
-import json
 import boto3
-import pandas as pd
+import csv
+import json
+import os
 import io
-import re
-import unicodedata
+from datetime import datetime
 
 s3 = boto3.client('s3')
 
 def lambda_handler(event, context):
-    # Obtener nombre del bucket y archivo
-    bucket = event['Records'][0]['s3']['bucket']['name']
-    key = event['Records'][0]['s3']['object']['key']
+    # Datos del evento
+    bucket_name = event['Records'][0]['s3']['bucket']['name']
+    object_key  = event['Records'][0]['s3']['object']['key']
 
-    # Descargar archivo CSV desde S3
-    response = s3.get_object(Bucket=bucket, Key=key)
-    df = pd.read_csv(response['Body'])
+    # Obtener archivo CSV desde S3
+    response = s3.get_object(Bucket=bucket_name, Key=object_key)
+    content = response['Body'].read().decode('utf-8').splitlines()
+    reader = csv.DictReader(content)
 
-    # REGULAS DE NEGOCIO (20)
+    cleaned_rows = []
 
-    # 1. QUANTITYORDERED vacíos → eliminar
-    df = df.dropna(subset=["QUANTITYORDERED"])
+    for row in reader:
+        # Regla 1: Eliminar filas vacías
+        if all(value.strip() == '' for value in row.values()):
+            continue
 
-    # 2. PRICEEACH negativos → NaN
-    df["PRICEEACH"] = pd.to_numeric(df["PRICEEACH"], errors='coerce')
-    df.loc[df["PRICEEACH"] < 0, "PRICEEACH"] = pd.NA
+        # Regla 2: Validar ID no vacío
+        if not row['ID']:
+            continue
 
-    # 3. STATUS mal escrito → corregir
-    df["STATUS"] = df["STATUS"].replace({"DLEIVERED": "DELIVERED"})
+        # Regla 3: Normalizar nombres (capitalización)
+        row['Cliente'] = row['Cliente'].strip().title()
 
-    # 4. ORDERDATE inválidas → descartar
-    df["ORDERDATE"] = pd.to_datetime(df["ORDERDATE"], errors='coerce')
-    df = df.dropna(subset=["ORDERDATE"])
+        # Regla 4: Validar monto (positivo)
+        try:
+            monto = float(row['Monto'])
+            if monto <= 0:
+                continue
+            row['Monto'] = round(monto, 2)
+        except:
+            continue
 
-    # 5. SALES texto → convertir o eliminar
-    df["SALES"] = pd.to_numeric(df["SALES"], errors='coerce')
-    df = df.dropna(subset=["SALES"])
+        # Regla 5: Normalizar campo de ciudad
+        row['Ciudad'] = row['Ciudad'].strip().title()
 
-    # 6. Eliminar duplicados
-    df = df.drop_duplicates()
+        # Regla 6: Convertir estado a booleano
+        estado = row.get('Estado', '').strip().lower()
+        row['Estado'] = True if estado in ['activo', 'true', '1'] else False
 
-    # 7. PRODUCTCODE muy largo → truncar a 15
-    df["PRODUCTCODE"] = df["PRODUCTCODE"].astype(str).str.slice(0, 15)
+        # Regla 7: Validar correo (contenga @ y .)
+        correo = row.get('Correo', '')
+        if '@' not in correo or '.' not in correo:
+            continue
 
-    # 8. ORDERNUMBER vacío → eliminar
-    df = df.dropna(subset=["ORDERNUMBER"])
+        # Regla 8: Normalizar fecha a YYYY-MM-DD
+        try:
+            fecha = datetime.strptime(row['Fecha'], "%d/%m/%Y")
+            row['Fecha'] = fecha.strftime("%Y-%m-%d")
+        except:
+            continue
 
-    # 9. ORDERLINENUMBER vacío → eliminar
-    df = df.dropna(subset=["ORDERLINENUMBER"])
+        # Regla 9: Eliminar caracteres especiales en notas
+        row['Notas'] = ''.join(c for c in row.get('Notas', '') if c.isalnum() or c.isspace())
 
-    # 10. QUANTITYORDERED = 0 → eliminar
-    df = df[df["QUANTITYORDERED"] != 0]
+        # Regla 10: Quitar espacios duplicados en nombre
+        row['Cliente'] = ' '.join(row['Cliente'].split())
 
-    # 11. SALES vacíos → eliminar (ya cubierto en regla 5)
+        # Regla 11: Validar número telefónico (10 dígitos)
+        telefono = ''.join(filter(str.isdigit, row.get('Telefono', '')))
+        if len(telefono) != 10:
+            continue
+        row['Telefono'] = telefono
 
-    # 12. ORDERDATE texto irreconocible → descartado (ya cubierto en regla 4)
+        # Regla 12: Eliminar campos vacíos innecesarios
+        row = {k: v for k, v in row.items() if v.strip() != ''}
 
-    # 13. PRODUCTLINE muy largo → truncar a 30
-    df["PRODUCTLINE"] = df["PRODUCTLINE"].astype(str).str.slice(0, 30)
+        # Regla 13: Validar país permitido
+        if row.get('Pais', '').strip().lower() not in ['peru', 'chile', 'mexico']:
+            continue
 
-    # 14. NUMERICCODE con texto tipo "abc", "xx" → filtrar
-    df["NUMERICCODE"] = pd.to_numeric(df["NUMERICCODE"], errors='coerce')
-    df = df.dropna(subset=["NUMERICCODE"])
+        # Regla 14: Estandarizar método de pago
+        pago = row.get('Pago', '').strip().lower()
+        if pago in ['efectivo', 'cash']:
+            row['Pago'] = 'Efectivo'
+        elif pago in ['tarjeta', 'card']:
+            row['Pago'] = 'Tarjeta'
+        elif pago in ['yape', 'plin']:
+            row['Pago'] = 'Transferencia'
+        else:
+            continue
 
-    # 15. STATUS vacío → colocar "UNKNOWN"
-    df["STATUS"] = df["STATUS"].fillna("UNKNOWN")
+        # Regla 15: Verificar monto < 10000
+        if float(row['Monto']) > 10000:
+            continue
 
-    # 16. PRICEEACH no numérico → convertir o eliminar (ya cubierto en regla 2)
+        # Regla 16: Eliminar campos de debug si existen
+        row.pop('debug_info', None)
 
-    # 17. ORDERNUMBER tipo string "ORDX" → eliminar si no es número
-    df = df[df["ORDERNUMBER"].astype(str).str.isnumeric()]
+        # Regla 17: Validar código postal (5 dígitos)
+        cp = row.get('CP', '')
+        if not cp.isdigit() or len(cp) != 5:
+            continue
 
-    # 18. ORDERLINENUMBER tipo "LINEA-X" → descartar
-    df = df[df["ORDERLINENUMBER"].astype(str).str.isnumeric()]
+        # Regla 18: Limitar campo notas a 200 caracteres
+        row['Notas'] = row.get('Notas', '')[:200]
 
-    # 19. COUNTRY con emojis → limpiar
-    def remove_emojis(text):
-        if pd.isnull(text):
-            return text
-        return ''.join(c for c in text if not unicodedata.category(c).startswith('So'))
+        # Regla 19: Asegurar que ID es numérico
+        if not row['ID'].isdigit():
+            continue
 
-    df["COUNTRY"] = df["COUNTRY"].apply(remove_emojis)
+        # Regla 20: Remover duplicados (solo si ID ya fue agregado)
+        if any(existing['ID'] == row['ID'] for existing in cleaned_rows):
+            continue
 
-    # 20. CITY vacío → "SIN CIUDAD"
-    df["CITY"] = df["CITY"].fillna("SIN CIUDAD")
+        cleaned_rows.append(row)
 
-    # Guardar resultado como JSON
-    json_buffer = io.StringIO()
-    df.to_json(json_buffer, orient="records", force_ascii=False)
-
-    result_key = key.replace("raw/", "processed/").replace(".csv", ".json")
+    # Guardar como JSON en carpeta processed/
+    output_filename = os.path.basename(object_key).replace(".csv", ".json")
+    output_key = f"processed/{output_filename}"
 
     s3.put_object(
-        Bucket=bucket,
-        Key=result_key,
-        Body=json_buffer.getvalue(),
-        ContentType="application/json"
+        Bucket=bucket_name,
+        Key=output_key,
+        Body=json.dumps(cleaned_rows, indent=2),
+        ContentType='application/json'
     )
 
     return {
         'statusCode': 200,
-        'body': f'Datos procesados y guardados como {result_key}'
+        'body': f'Se procesó {object_key} y se creó {output_key} con {len(cleaned_rows)} registros limpios.'
     }
-# activando workflow por prueba 6
+
+#nuevo
